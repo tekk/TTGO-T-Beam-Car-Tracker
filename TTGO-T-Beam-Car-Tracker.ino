@@ -1,30 +1,31 @@
+#include <SPI.h>
 #include <lmic.h>
 #include <hal/hal.h>
-#include <SPI.h>
 #include <WiFi.h>
 #include <CayenneLPP.h>
+#include <Wire.h>
+#include <Adafruit_BME280.h>
 
 // UPDATE the config.h file in the same folder WITH YOUR TTN KEYS AND ADDR.
+// LMIC library will complain that it couldn't initialize the module without these keys
 #include "config.h"
 #include "gps.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-uint8_t temprature_sens_read();
-#ifdef __cplusplus
-}
-#endif
-uint8_t temprature_sens_read();
+#define I2C_SDA 21 // SDA1
+#define I2C_SCL 22 // SCL1
+#define SEALEVELPRESSURE_HPA (1013.25) // this should be set according to the weather forecast
+#define BME280_ADDRESS 0x76 // you can use I2C scanner demo to find your BME280 I2C address
+#define BUILTIN_LED 14 // T-Beam blue LED, see: http://tinymicros.com/wiki/TTGO_T-Beam
 
-// T-Beam specific hardware
-#define BUILTIN_LED 21
+CayenneLPP lpp(51); // here we will construct Cayenne Low Power Payload (LPP) - see https://community.mydevices.com/t/cayenne-lpp-2-0/7510
+gps gps; // class that is encapsulating additional GPS functionality
+Adafruit_BME280 bme(I2C_SDA, I2C_SCL); // these pins are defined above
 
-double lat, lon, alt, kmph, temperature; // GPS data and ESP32 temperature saved here
-int sats; // No. of satellites
+double lat, lon, alt, kmph; // GPS data are saved here: Latitude, Longitude, Altitude, Speed in km/h
+float tmp, hum, pressure, alt_barometric; // BME280 data are saved here: Temperature, Humidity, Pressure, Altitude calculated from atmospheric pressure
+int sats; // GPS satellite count
 char s[32]; // used to sprintf for Serial output
-CayenneLPP lpp(51);
-gps gps;
+bool status; // status after reading from BME280
 
 // These callbacks are only used in over-the-air activation, so they are
 // left empty here (we cannot leave them out completely unless
@@ -33,19 +34,55 @@ void os_getArtEui (u1_t* buf) { }
 void os_getDevEui (u1_t* buf) { }
 void os_getDevKey (u1_t* buf) { }
 
-static osjob_t sendjob;
+static osjob_t sendjob; // callback to LoRa send packet 
+void getBME280Values(void); // declaration for function below
+
 // Schedule TX every this many seconds (might become longer due to duty cycle limitations).
 const unsigned int TX_INTERVAL = 240;
-const unsigned int SHORT_TX_INTERVAL = 20;
-const double MOVING_KMPH = 10.0;
+const unsigned int GPS_FIX_RETRY_DELAY = 10; // wait this many seconds when no GPS fix is received to retry
+const unsigned int SHORT_TX_INTERVAL = 20; // when driving, send packets every SHORT_TX_INTERVAL seconds
+const double MOVING_KMPH = 10.0; // if speed in km/h is higher than MOVING_HMPH, we assume that car is moving
 
 // Pin mapping
 const lmic_pinmap lmic_pins = {
   .nss = 18,
   .rxtx = LMIC_UNUSED_PIN,
-  .rst = LMIC_UNUSED_PIN, // was "LMIC_UNUSED_PIN"
-  .dio = {26, 33, 32},
-};
+  .rst = 23,
+  .dio = {26, 33, 32},  // PIN 33 HAS TO BE PHYSICALLY CONNECTED TO PIN Lora1 OF TTGO
+};                      // the second connection from Lora2 to pin 32 is not necessary
+
+
+void getBME280Values() {
+
+  if (!status) { // we don't have BME280 connection, clear the values and exit
+    tmp = 0.0f;
+    pressure = 0.0f;
+    alt_barometric = 0.0f;
+    hum = 0.0f;
+    return;
+  }
+  
+  tmp = bme.readTemperature();
+  pressure = bme.readPressure() / 100.0F;
+  alt_barometric = bme.readAltitude(SEALEVELPRESSURE_HPA);
+  hum = bme.readHumidity();
+  
+  Serial.print(F("Temperature = "));
+  Serial.print(tmp);
+  Serial.print("C, ");
+  Serial.print("Pressure = ");
+  Serial.print(pressure);
+  Serial.print("hPa, ");
+  Serial.print("Approx. Altitude = ");
+  Serial.print(alt_barometric);
+  Serial.print("m, ");
+  Serial.print("Humidity = ");
+  Serial.print(hum);
+  Serial.println("%");
+
+  delay(100);
+}
+
 
 void onEvent (ev_t ev) {
   switch (ev) {
@@ -83,10 +120,10 @@ void onEvent (ev_t ev) {
       Serial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
       digitalWrite(BUILTIN_LED, LOW);
       if (LMIC.txrxFlags & TXRX_ACK) {
-        Serial.println(F("Received Ack"));
+        Serial.println(F("Received ACK!"));
       }
       if (LMIC.dataLen) {
-        sprintf(s, "Received %i bytes of payload", LMIC.dataLen);
+        sprintf(s, "Yey! Received %i bytes of payload!", LMIC.dataLen);
         Serial.println(s);
         sprintf(s, "RSSI %d SNR %.1d", LMIC.rssi, LMIC.snr);
         Serial.println(s);
@@ -118,12 +155,8 @@ void onEvent (ev_t ev) {
 
 void do_send(osjob_t* j) {  
 
-  // Convert raw temperature in F to Celsius degrees
-  temperature = (temprature_sens_read() - 32) / 1.8;
-  Serial.print(F("Temperature: "));
-  Serial.print(temperature);
-  Serial.println(F(" C"));
-
+  getBME280Values();
+  
   // Check if there is not a current TX/RX job running
   if (LMIC.opmode & OP_TXRXPEND)
   {
@@ -135,20 +168,28 @@ void do_send(osjob_t* j) {
     {
       // Prepare upstream data transmission at the next possible time.
       gps.getLatLon(&lat, &lon, &alt, &kmph, &sats);
+
+      // we have all the data that we need, let's construct LPP packet for Cayenne
       lpp.reset();
       lpp.addGPS(1, lat, lon, alt);
-      lpp.addAnalogInput(2, kmph);
-      lpp.addAnalogInput(3, sats);
-      lpp.addAnalogInput(4, temperature);
+      lpp.addTemperature(2, tmp);
+      lpp.addRelativeHumidity(3, hum);
+      lpp.addBarometricPressure(4, pressure);
+      lpp.addAnalogInput(5, kmph);
+      lpp.addAnalogInput(6, sats);
+      lpp.addAnalogInput(7, alt_barometric);
+
+      // read LPP packet bytes, write them to FIFO buffer of the LoRa module, queue packet to send to TTN
       LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
+      
       Serial.print(lpp.getSize());
-      Serial.println(F(" byte packet queued."));
+      Serial.println(F(" bytes long LPP packet queued."));
       digitalWrite(BUILTIN_LED, HIGH);
     }
     else
     {
-      //try again in 3 seconds
-      os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(3), do_send);
+      // try again in a few 'GPS_FIX_RETRY_DELAY' seconds...
+      os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(GPS_FIX_RETRY_DELAY), do_send);
     }
   }
   // Next TX is scheduled after TX_COMPLETE event.
@@ -156,7 +197,7 @@ void do_send(osjob_t* j) {
 
 void setup() {
   Serial.begin(115200);
-  Serial.println(F("LoRa & GSM based TTN Car/bike tracker"));
+  Serial.println(F("LoRa & GSM based TTN car tracker"));
   
   //Turn off WiFi and Bluetooth
   WiFi.mode(WIFI_OFF);
@@ -164,6 +205,31 @@ void setup() {
   
   gps.init();
 
+  status = bme.begin(BME280_ADDRESS);
+  
+  if (!status) {
+    Serial.println(F("Could not find a valid BME280 sensor, check wiring!"));
+  } else {
+    Serial.println(F("BME280 initialized sucessfully"));
+    delay(1000); // stabilize sensor readings
+  }
+
+  if (status) {
+    Serial.println(F("normal mode, 16x pressure / 2x temperature / 1x humidity oversampling,"));
+    Serial.println(F("0.5ms standby period, filter 16x"));
+    bme.setSampling(Adafruit_BME280::MODE_NORMAL,
+                    Adafruit_BME280::SAMPLING_X2,  // temperature
+                    Adafruit_BME280::SAMPLING_X16, // pressure
+                    Adafruit_BME280::SAMPLING_X1,  // humidity
+                    Adafruit_BME280::FILTER_X16,
+                    Adafruit_BME280::STANDBY_MS_0_5 );
+
+
+    delay(500);
+  }
+
+  Serial.println(F("Initializing LoRa module"));
+  
   // LMIC init
   os_init();
   // Reset the MAC state. Session and pending data transfers will be discarded.
@@ -215,6 +281,8 @@ void setup() {
 
   pinMode(BUILTIN_LED, OUTPUT);
   digitalWrite(BUILTIN_LED, LOW);
+
+  Serial.println(F("Ready to track"));
   
   // Start job
   do_send(&sendjob);
