@@ -64,7 +64,7 @@ Any value from 2.2k to 10k should be OK.
 
 If you haven't already, update with your own [TTN keys](https://www.thethingsnetwork.org/docs/devices/registration.html) - **ABP authentication**
 
-## 4. Hardware
+## Hardware
 
 - **TTGO-T-Beam**
 	- ESP32 + GPS + LoRa
