@@ -53,3 +53,4 @@ dkms.conf
 
 # Configuration for LoRaWAN TTN
 config.h
+/config.h

@@ -1,5 +1,12 @@
-# Car / bike GPS tracker with TTGO-T-Beam & A6 GPRS module
-### Using ESP32 + LoRa + A6 GPRS module
+# 🚘 Car GPS tracker with TTGO-T-Beam & A6 GPRS module
+### Using ESP32 + uBlox GPS + LoRa + A6 GSM module
+
+## Instructions
+
+> ⚠️ You need to connect the [T-Beam](https://github.com/LilyGO/TTGO-T-Beam) `DIO1` pin marked `Lora1` to the *pin 33* - So that the ESP32 can read that output from the Lora module.
+> Optionally you can also connect the `Lora2` output to `GPIO 32`, but this is not needed here.
+
+You can program the T-Beam using the [Arduino ESP32](https://github.com/espressif/arduino-esp32) board `Heltec_WIFI_LoRa_32`.
 
 ## Libraries needed
 
@@ -7,14 +14,7 @@
 - [TinyGPS++](https://github.com/mikalhart/TinyGPSPlus)
 - [CayenneLPP](https://github.com/sabas1080/CayenneLPP)
 - [BME280-I2C-ESP32](https://github.com/Takatsuki0204/BME280-I2C-ESP32)
-	- Delete / uninstall original Adafruit BME280 library after installing this, otherwise it will cause conflicts
-
-## Instructions
-
-You need to connect the [T-Beam](https://github.com/LilyGO/TTGO-T-Beam) DIO1 pin marked *Lora1* to the *pin 33* - So that the ESP32 can read that output from the Lora module.
-Optionally you can also connect the *Lora2* output to *GPIO 32*, but this is not needed here.
-
-You can program the T-Beam using the [Arduino ESP32](https://github.com/espressif/arduino-esp32) board `Heltec_WIFI_LoRa_32`.
+	- Delete / uninstall original Adafruit BME280 library after installing this, otherwise it will cause conflicts!
 
 ### Update `config.h`
 
@@ -44,8 +44,11 @@ Update with your own [TTN keys](https://www.thethingsnetwork.org/docs/devices/re
 
 ![TTGO Pin map](images/pinmap.png)
 
-### Specifications
+### TTGO-T-Beam Specifications
 ```
+TTGO-T-Beam
+~~~~~~~~~~~
+
 ESP32
   ESP32 Version REV1
   WiFi
@@ -108,4 +111,5 @@ You are welcome to contribute to this project in any way. Suggestions/feedback i
 
 ## Credits
 
-- Thanks to DeuxVis for his [Lora-TTNMapper-T-Beam](https://github.com/DeuxVis/Lora-TTNMapper-T-Beam)
+- Thanks to [DeuxVis](https://github.com/DeuxVis) for his [Lora-TTNMapper-T-Beam](https://github.com/DeuxVis/Lora-TTNMapper-T-Beam) which came as an inspiration for this project
+- Huge thanks goes to my wife for buying me a new car 😃 I love you Evka.❤️
