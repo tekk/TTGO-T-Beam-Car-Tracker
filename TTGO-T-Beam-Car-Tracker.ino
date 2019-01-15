@@ -176,8 +176,9 @@ void do_send(osjob_t* j) {
       lpp.addRelativeHumidity(3, hum);
       lpp.addBarometricPressure(4, pressure);
       lpp.addAnalogInput(5, kmph);
-      lpp.addAnalogInput(6, sats);
-      lpp.addAnalogInput(7, alt_barometric);
+      // optional: Satellite count and altitude from barometric sensor
+      //lpp.addAnalogInput(6, sats);
+      //lpp.addAnalogInput(7, alt_barometric);
 
       // read LPP packet bytes, write them to FIFO buffer of the LoRa module, queue packet to send to TTN
       LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
