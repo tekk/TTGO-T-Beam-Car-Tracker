@@ -16,6 +16,7 @@
 #define SEALEVELPRESSURE_HPA (1013.25) // this should be set according to the weather forecast
 #define BME280_ADDRESS 0x76 // you can use I2C scanner demo to find your BME280 I2C address
 #define BUILTIN_LED 14 // T-Beam blue LED, see: http://tinymicros.com/wiki/TTGO_T-Beam
+#define BATTERY_PIN 35 // battery level measurement pin, here is the voltage divider connected
 
 CayenneLPP lpp(51); // here we will construct Cayenne Low Power Payload (LPP) - see https://community.mydevices.com/t/cayenne-lpp-2-0/7510
 gps gps; // class that is encapsulating additional GPS functionality
@@ -26,6 +27,7 @@ float tmp, hum, pressure, alt_barometric; // BME280 data are saved here: Tempera
 int sats; // GPS satellite count
 char s[32]; // used to sprintf for Serial output
 bool status; // status after reading from BME280
+float vBat; // battery voltage
 
 // These callbacks are only used in over-the-air activation, so they are
 // left empty here (we cannot leave them out completely unless
@@ -51,6 +53,14 @@ const lmic_pinmap lmic_pins = {
   .dio = {26, 33, 32},  // PIN 33 HAS TO BE PHYSICALLY CONNECTED TO PIN Lora1 OF TTGO
 };                      // the second connection from Lora2 to pin 32 is not necessary
 
+
+void getBatteryVoltage() {
+  // we've set 10-bit ADC resolution 2^10=1024 and voltage divider makes it half of maximum readable value (which is 3.3V)
+  vBat = analogRead(BATTERY_PIN) * 2.0 * (3.3 / 1024.0);
+  Serial.print("Battery voltage: ");
+  Serial.print(vBat);
+  Serial.println("V");  
+}
 
 void getBME280Values() {
 
@@ -155,6 +165,7 @@ void onEvent (ev_t ev) {
 
 void do_send(osjob_t* j) {  
 
+  getBatteryVoltage();
   getBME280Values();
   
   // Check if there is not a current TX/RX job running
@@ -175,11 +186,12 @@ void do_send(osjob_t* j) {
       lpp.addTemperature(2, tmp);
       lpp.addRelativeHumidity(3, hum);
       lpp.addBarometricPressure(4, pressure);
-      lpp.addAnalogInput(5, kmph);
-      // optional: Satellite count and altitude from barometric sensor
+      // optional: send current speed, satellite count, altitude from barometric sensor and battery voltage
+      //lpp.addAnalogInput(5, kmph);
       //lpp.addAnalogInput(6, sats);
       //lpp.addAnalogInput(7, alt_barometric);
-
+      //lpp.addAnalogInput(8, vBat);
+      
       // read LPP packet bytes, write them to FIFO buffer of the LoRa module, queue packet to send to TTN
       LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
       
@@ -199,6 +211,11 @@ void do_send(osjob_t* j) {
 void setup() {
   Serial.begin(115200);
   Serial.println(F("LoRa & GSM based TTN car tracker"));
+
+  // set battery measurement pin
+  adcAttachPin(BATTERY_PIN);
+  adcStart(BATTERY_PIN);
+  analogReadResolution(10); // Default of 12 is not very linear. Recommended to use 10 or 11 depending on needed resolution.
   
   //Turn off WiFi and Bluetooth
   WiFi.mode(WIFI_OFF);
@@ -216,7 +233,7 @@ void setup() {
   }
 
   if (status) {
-    Serial.println(F("normal mode, 16x pressure / 2x temperature / 1x humidity oversampling,"));
+    Serial.println(F("BMP/BME280: normal mode, 16x pressure / 2x temperature / 1x humidity oversampling,"));
     Serial.println(F("0.5ms standby period, filter 16x"));
     bme.setSampling(Adafruit_BME280::MODE_NORMAL,
                     Adafruit_BME280::SAMPLING_X2,  // temperature
@@ -224,7 +241,6 @@ void setup() {
                     Adafruit_BME280::SAMPLING_X1,  // humidity
                     Adafruit_BME280::FILTER_X16,
                     Adafruit_BME280::STANDBY_MS_0_5 );
-
 
     delay(500);
   }
