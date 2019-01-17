@@ -29,16 +29,24 @@ I'll try to describe whole project setup as best I can.
 
 #### That's it, you're good to go! 😃
 
+### Screenshot
+
+![Cayenne Tracker screenshot](images/cayenne.png)
+
+### Cayenne data fields
+
 - After these steps, you will see these data fields in Cayenne Dashboard:
 
 ![Cayenne data fields sent by Tracker](images/cayenne-data-fields.png)
 
 > Note: In GPS field, there is also **GPS altitude** information available.
 
+Optional fields, you can choose to send them in the program:
+
 - **Analog Input (5)**: If tracker is moving, this field is **GPS speed**, in km/h
 - **Analog Input (6)**: Number of **satellites**, that the GPS module currently 'sees'
 - **Analog Input (7)**: Approximate tracker's **altitude** calculated from barometric air pressure
-
+- **Analog Input (8)**: Battery voltage (in volts)
 
 ## 2. Wiring
 
