@@ -7,7 +7,7 @@ This project uses [Cayenne Low Power Payload](https://community.mydevices.com/t/
 It has adaptive packet rate, meaning that when the car moves, tracker starts to 'burst' sending packets to update the trajectory as precise as possible.
 The **myDevices [Cayenne for LoRa](https://mydevices.com/cayenne/lora/)** connection is made through [The Things Network](https://www.thethingsnetwork.org/) LoRaWAN cloud.
 
-You can find docs about LPP here: [https://mydevices.com/cayenne/docs/lora/#lora-cayenne-low-power-payload](https://mydevices.com/cayenne/docs/lora/#lora-cayenne-low-power-payload)
+You can find docs about Cayenne Low Power Payload (LPP) [here](https://mydevices.com/cayenne/docs/lora/#lora-cayenne-low-power-payload).
 
 I'll try to describe whole project setup as best I can.
 
@@ -27,9 +27,11 @@ I'll try to describe whole project setup as best I can.
 12. If your tracker already sent any data to TTN, you'll see bunch of data fields. You can drag them to your Cayenne project.
 13. Install the **Cayenne** mobile app to your Android/iPhone.
 
-#### That's it, you're good to go! 😃
+#### That's it 😃
 
-### Screenshot
+### Cayenne Screenshot
+
+This is how it will look like when data is received by TTN and Cayenne.
 
 ![Cayenne Tracker screenshot](images/cayenne.png)
 
@@ -72,7 +74,13 @@ Any value from 2.2k to 10k should be OK.
 
 If you haven't already, update with your own [TTN keys](https://www.thethingsnetwork.org/docs/devices/registration.html) - **ABP authentication**
 
-## Hardware
+##### TTN Keys
+
+These are the keys you will need from the TTN console.
+
+![TTN Keys](images/ttn-keys.png)
+
+# Hardware
 
 - **TTGO-T-Beam**
 	- ESP32 + GPS + LoRa
@@ -175,4 +183,4 @@ Suggestions & feedback is much appreciated.
 ## Credits
 
 - Thanks to [DeuxVis](https://github.com/DeuxVis) for his [Lora-TTNMapper-T-Beam](https://github.com/DeuxVis/Lora-TTNMapper-T-Beam) which came as an inspiration for this project
-- Huge thanks goes to my beloved wife for buying me a new car 😃 I love you Evka.❤️
+- Huge thanks goes to my beloved wife for helping me to buy us a new car 😃 I love you Evka.❤️
