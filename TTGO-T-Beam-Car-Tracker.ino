@@ -29,6 +29,11 @@ char s[32]; // used to sprintf for Serial output
 bool status; // status after reading from BME280
 float vBat; // battery voltage
 long nextPacketTime;
+<<<<<<< HEAD
+=======
+
+void do_send(osjob_t* j);
+>>>>>>> 1c6969fbf89f334eb09aaa9f1f6128aaf31e02e7
 
 // These callbacks are only used in over-the-air activation, so they are
 // left empty here (we cannot leave them out completely unless
