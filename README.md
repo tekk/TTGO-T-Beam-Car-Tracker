@@ -43,10 +43,10 @@ I'll try to describe whole project setup as best I can.
 
 Optional fields, you can choose to send them in the program:
 
-- **Analog Input (5)**: If tracker is moving, this field is **GPS speed**, in km/h
-- **Analog Input (6)**: Number of **satellites**, that the GPS module currently 'sees'
-- **Analog Input (7)**: Approximate tracker's **altitude** calculated from barometric air pressure
-- **Analog Input (8)**: Battery voltage (in volts)
+- **Analog Input (5)**: Battery voltage (in volts)
+- **Analog Input (6)**: If tracker is moving, this field is **GPS speed**, in km/h
+- **Analog Input (7)**: Number of **satellites**, that the GPS module currently 'sees'
+- **Analog Input (8)**: Approximate tracker's **altitude** calculated from barometric air pressure
 
 ## 2. Wiring
 

@@ -28,6 +28,7 @@ int sats; // GPS satellite count
 char s[32]; // used to sprintf for Serial output
 bool status; // status after reading from BME280
 float vBat; // battery voltage
+long nextPacketTime;
 
 // These callbacks are only used in over-the-air activation, so they are
 // left empty here (we cannot leave them out completely unless
@@ -38,9 +39,11 @@ void os_getDevKey (u1_t* buf) { }
 
 static osjob_t sendjob; // callback to LoRa send packet 
 void getBME280Values(void); // declaration for function below
+void do_send(osjob_t* j); // declaration of send function
+
 
 // Schedule TX every this many seconds (might become longer due to duty cycle limitations).
-const unsigned int TX_INTERVAL = 240;
+const unsigned int TX_INTERVAL = 480;
 const unsigned int GPS_FIX_RETRY_DELAY = 10; // wait this many seconds when no GPS fix is received to retry
 const unsigned int SHORT_TX_INTERVAL = 20; // when driving, send packets every SHORT_TX_INTERVAL seconds
 const double MOVING_KMPH = 10.0; // if speed in km/h is higher than MOVING_HMPH, we assume that car is moving
@@ -109,7 +112,7 @@ void onEvent (ev_t ev) {
       Serial.println(F("EV_BEACON_TRACKED"));
       break;
     case EV_JOINING:
-      Serial.println(F("EV_JOINING"));
+      Serial.println(F("EV_JOINING. If program stops here, set correct LoRaWAN keys in config.h!"));
       break;
     case EV_JOINED:
       Serial.println(F("EV_JOINED"));
@@ -130,16 +133,21 @@ void onEvent (ev_t ev) {
       Serial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
       digitalWrite(BUILTIN_LED, LOW);
       if (LMIC.txrxFlags & TXRX_ACK) {
-        Serial.println(F("Received ACK!"));
+        Serial.println(F("Yup, received ACK!"));
       }
       if (LMIC.dataLen) {
-        sprintf(s, "Yey! Received %i bytes of payload!", LMIC.dataLen);
+        sprintf(s, "Yeey! Received %i bytes of payload!", LMIC.dataLen);
         Serial.println(s);
         sprintf(s, "RSSI %d SNR %.1d", LMIC.rssi, LMIC.snr);
         Serial.println(s);
       }
       // Schedule next transmission
-      os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(kmph > MOVING_KMPH ? SHORT_TX_INTERVAL : TX_INTERVAL), do_send);
+      nextPacketTime = (kmph > MOVING_KMPH ? SHORT_TX_INTERVAL : TX_INTERVAL); // depend on current GPS speed
+      os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(nextPacketTime), do_send);
+      Serial.print(F("Next LoRa packet scheduled in "));
+      Serial.print(nextPacketTime);
+      Serial.println(F(" seconds!"));
+      Serial.println(F("------------------------------------------------"));
       break;
     case EV_LOST_TSYNC:
       Serial.println(F("EV_LOST_TSYNC"));
@@ -186,11 +194,12 @@ void do_send(osjob_t* j) {
       lpp.addTemperature(2, tmp);
       lpp.addRelativeHumidity(3, hum);
       lpp.addBarometricPressure(4, pressure);
+      lpp.addAnalogInput(5, vBat);
       // optional: send current speed, satellite count, altitude from barometric sensor and battery voltage
-      //lpp.addAnalogInput(5, kmph);
-      //lpp.addAnalogInput(6, sats);
-      //lpp.addAnalogInput(7, alt_barometric);
-      //lpp.addAnalogInput(8, vBat);
+      //lpp.addAnalogInput(6, kmph);
+      //lpp.addAnalogInput(7, sats);
+      //lpp.addAnalogInput(8, alt_barometric);
+      
       
       // read LPP packet bytes, write them to FIFO buffer of the LoRa module, queue packet to send to TTN
       LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
