@@ -1,4 +1,5 @@
 # 🚘 Car GPS tracker with TTGO-T-Beam
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Flag_of_Slovakia.svg/30px-Flag_of_Slovakia.svg.png) ![](https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Flag_of_the_Czech_Republic.svg/30px-Flag_of_the_Czech_Republic.svg.png)
 ### ESP32 + GPS + LoRa + GSM <sup>(optional)</sup>
 
 This is an Arduino project for the **[TTGO T-Beam](https://github.com/LilyGO/TTGO-T-Beam)** ESP32 development board, which has LoRa chip onboard.
@@ -76,7 +77,7 @@ If you haven't already, update with your own [TTN keys](https://www.thethingsnet
 
 ##### TTN Keys
 
-These are the keys you will need from the TTN console.
+These are the keys you will need from the TTN console (marked yellow).
 
 ![TTN Keys](images/ttn-keys.png)
 
