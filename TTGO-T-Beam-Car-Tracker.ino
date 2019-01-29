@@ -11,6 +11,7 @@
 #include "config.h"
 #include "gps.h"
 
+#define DEBUG 1 // for shorter send periods
 #define I2C_SDA 21 // SDA1
 #define I2C_SCL 22 // SCL1
 #define SEALEVELPRESSURE_HPA (1013.25) // this should be set according to the weather forecast
@@ -29,11 +30,6 @@ char s[32]; // used to sprintf for Serial output
 bool status; // status after reading from BME280
 float vBat; // battery voltage
 long nextPacketTime;
-<<<<<<< HEAD
-=======
-
-void do_send(osjob_t* j);
->>>>>>> 1c6969fbf89f334eb09aaa9f1f6128aaf31e02e7
 
 // These callbacks are only used in over-the-air activation, so they are
 // left empty here (we cannot leave them out completely unless
@@ -48,7 +44,12 @@ void do_send(osjob_t* j); // declaration of send function
 
 
 // Schedule TX every this many seconds (might become longer due to duty cycle limitations).
+#ifdef DEBUG
 const unsigned int TX_INTERVAL = 480;
+#elif
+const unsigned int TX_INTERVAL = 120;
+#endif
+
 const unsigned int GPS_FIX_RETRY_DELAY = 10; // wait this many seconds when no GPS fix is received to retry
 const unsigned int SHORT_TX_INTERVAL = 20; // when driving, send packets every SHORT_TX_INTERVAL seconds
 const double MOVING_KMPH = 10.0; // if speed in km/h is higher than MOVING_HMPH, we assume that car is moving
