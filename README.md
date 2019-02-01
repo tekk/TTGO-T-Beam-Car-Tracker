@@ -34,7 +34,7 @@ I'll try to describe whole project setup as best I can.
 
 This is how it will look like when data is received by TTN and Cayenne.
 
-![Cayenne Tracker screenshot](images/cayenne.png)
+![Cayenne Tracker screenshot](images/cayenne2.png)
 
 ### Cayenne data fields
 

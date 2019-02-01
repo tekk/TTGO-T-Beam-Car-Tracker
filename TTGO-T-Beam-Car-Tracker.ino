@@ -11,7 +11,7 @@
 #include "config.h"
 #include "gps.h"
 
-#define DEBUG 1 // for shorter send periods
+#define DEBUG 1 // for shorter send periods 
 #define I2C_SDA 21 // SDA1
 #define I2C_SCL 22 // SCL1
 #define SEALEVELPRESSURE_HPA (1013.25) // this should be set according to the weather forecast
@@ -45,13 +45,13 @@ void do_send(osjob_t* j); // declaration of send function
 
 // Schedule TX every this many seconds (might become longer due to duty cycle limitations).
 #ifdef DEBUG
-const unsigned int TX_INTERVAL = 480;
-#elif
 const unsigned int TX_INTERVAL = 120;
+#elif
+const unsigned int TX_INTERVAL = 360;
 #endif
 
-const unsigned int GPS_FIX_RETRY_DELAY = 10; // wait this many seconds when no GPS fix is received to retry
-const unsigned int SHORT_TX_INTERVAL = 20; // when driving, send packets every SHORT_TX_INTERVAL seconds
+const unsigned int GPS_FIX_RETRY_DELAY = 5; // wait this many seconds when no GPS fix is received to retry
+const unsigned int SHORT_TX_INTERVAL = 30; // when driving, send packets every SHORT_TX_INTERVAL seconds
 const double MOVING_KMPH = 10.0; // if speed in km/h is higher than MOVING_HMPH, we assume that car is moving
 
 // Pin mapping
